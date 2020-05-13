@@ -1,5 +1,4 @@
 from .google_client import GoogleAccount, FileSystemTokenBackend
-from ..utils.help_func import get_proxies
 from .static import (
     default_account_name,
     default_client,
@@ -14,9 +13,7 @@ def init(args, init=True):
     token_backend = get_token_backend(args)
 
     account = GoogleAccount(
-        credentials,
-        token_backend=token_backend,
-        proxies=get_proxies,
+        credentials, token_backend=token_backend, proxies=args.proxies,
     )
     if init:
         account.authenticate(

@@ -1,12 +1,18 @@
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
+from functools import reduce
 from multiprocessing import JoinableQueue
 from queue import Empty
 
 from ..utils.bar_custom import count_bar, message_bar, sleep_bar
 from ..utils.help_func import get_remote_base_path, norm_path
-from .file_uploader import get_upload_url, upload_file, create_folder_by_path
+from .file_uploader import (
+    create_folder_by_name,
+    get_files_by_name,
+    get_upload_url,
+    upload_file,
+)
 
 
 def get_path(local_paths, remote_base_path):
@@ -27,11 +33,45 @@ def get_path(local_paths, remote_base_path):
                             remote_base_path, root[len(base_path) :].strip("/"), name
                         )
                     )
-                    file_list.append((local_path, remote_path))
+                    file_list.append((local_path, "/" + remote_path))
                 bar.postfix = [root]
                 bar.update(1)
             bar.close()
     return file_list
+
+
+def create_folders(client, dir_list):
+    dirs = []
+    path_map = {"/": "root"}
+
+    def add_path(x, y):
+        rusult = x + "/" + y
+        dirs.append(rusult)
+        return rusult
+
+    [reduce(add_path, d.split("/")) for d in dir_list]
+
+    dir_sorted = sorted(set(dirs), key=lambda x: len(x))
+    try:
+        bar = count_bar(message="个文件夹已完成")
+        for d in dir_sorted:
+            dir_path, dir_name = os.path.split(d)
+
+            base_folder_id = path_map.get(dir_path)
+            has_folder = get_files_by_name(client, base_folder_id, dir_name)
+            if not has_folder:
+                folder = create_folder_by_name(client, base_folder_id, dir_name)
+                folder_id = folder.get("id")
+            else:
+                folder_id = has_folder[0].get("id")
+
+            path_map[d] = folder_id
+            bar.postfix = ["gd:" + d]
+            bar.update(1)
+        bar.close()
+        return path_map
+    except Exception as e:
+        print(e)
 
 
 def put(client, args):
@@ -43,26 +83,16 @@ def put(client, args):
 
     file_list = get_path(local_paths, remote_base_path)
     [q.put(i) for i in file_list]
-    try:
-        path_id_map = {}
-        create_folder_bar = count_bar(message="个远程文件夹已完成")
-        for base_dir in set(
-            [os.path.dirname(i[1]) for i in file_list if os.path.dirname(i[1])]
-        ):
-            path_id_map[base_dir] = create_folder_by_path(client, base_dir).get("id")
-            create_folder_bar.postfix = [base_dir]
-            create_folder_bar.update(1)
-        create_folder_bar.close()
-    except Exception as e:
-        print(str(e))
-    print(path_id_map)
+
+    dir_list = set([os.path.dirname(i[1]) for i in file_list])
+    path_map = create_folders(client, dir_list)
 
     def do_task(task):
         sleep_q.join()
         local_path, remote_path = task
 
         base_dir, name = os.path.split(remote_path)
-        parent_id = path_id_map.get(base_dir)
+        parent_id = path_map.get(base_dir)
         status, upload_url, sleep_time = get_upload_url(
             client, parent_id if parent_id else "root", name
         )
@@ -73,6 +103,7 @@ def put(client, args):
                 upload_url=upload_url,
                 chunk_size=args.chunk,
                 step_size=args.step,
+                proxies=args.proxies,
             )
             if result is not True:
                 q.put(task)
@@ -81,11 +112,11 @@ def put(client, args):
             if sleep_q.empty():
                 sleep_q.put(sleep_time)
         elif status == "exist":
-            message_bar(remote_path="gd:/" + remote_path, message="文件已存在")
+            message_bar(remote_path="gd:" + remote_path, message="文件已存在")
         else:
             q.put(task)
             message_bar(
-                remote_path="gd:/" + remote_path, message="发生错误 (稍后重试): " + status
+                remote_path="gd:" + remote_path, message="发生错误 (稍后重试): " + status
             )
         q.task_done()
 

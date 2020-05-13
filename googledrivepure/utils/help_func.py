@@ -27,7 +27,3 @@ def norm_path(path):
 
 def get_remote_base_path(path):
     return "/".join(path.split("/")[1:])
-
-
-def get_proxies():
-    return {"http": None, "https": None}

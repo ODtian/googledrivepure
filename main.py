@@ -1,16 +1,10 @@
 from googledrivepure.account import do_init
 from googledrivepure.upload import do_upload
 from googledrivepure.args import parse_args
-from googledrivepure.utils import help_func
 
 
 def main():
     args = parse_args()
-
-    def get_proxies():
-        return args.proxies
-
-    help_func.get_proxies = get_proxies
 
     client = do_init(args, init=(args.mode == "init"))
     if args.mode == "upload":

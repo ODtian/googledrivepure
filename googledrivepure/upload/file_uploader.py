@@ -4,28 +4,10 @@ import os
 import requests
 
 from ..utils.bar_custom import message_bar, upload_bar
-from ..utils.help_func import get_data, get_headers, get_proxies
-
-_proxies = get_proxies()
-
-
-def get_files_by_name(client, parent_id, name, file_type="folder"):
-    API_HOST = "https://www.googleapis.com/drive/v3/files"
-    params = {
-        "q": "'{parent_id}' in parents and name = '{name}' and mimeType {file_type}= 'application/vnd.google-apps.folder'".format(
-            parent_id=parent_id,
-            file_type=("" if file_type == "folder" else "!"),
-            name=name,
-        )
-    }
-    headers = get_headers(client)
-    r = requests.get(API_HOST, headers=headers, params=params, proxies=_proxies)
-    files = r.json().get("files", [])
-    return files
+from ..utils.help_func import get_data, get_headers
 
 
 def create_folder_by_name(client, parent_id, name):
-    API_HOST = "https://www.googleapis.com/drive/v3/files"
     data = json.dumps(
         {
             "name": name,
@@ -34,22 +16,30 @@ def create_folder_by_name(client, parent_id, name):
         }
     )
     headers = get_headers(client)
-    r = requests.post(API_HOST, headers=headers, data=data, proxies=_proxies)
+    r = requests.post(
+        client.drive_url, headers=headers, data=data, proxies=client.proxies
+    )
     files = r.json()
     return files
 
 
-def create_folder_by_path(client, path):
-    current_folder = {"id": "root"}
-    for name in path.split("/"):
-        cur_folder_id = current_folder.get("id")
-        has_folder = get_files_by_name(client, cur_folder_id, name)
-        if not has_folder:
-            current_folder = create_folder_by_name(client, cur_folder_id, name)
-        else:
-            current_folder = has_folder[0]
-
-    return current_folder
+def get_files_by_name(client, parent_id, name, file_type="folder"):
+    params = {
+        "q": "'{parent_id}' in parents and "
+        "name = '{name}' and "
+        "mimeType {file_type}= 'application/vnd.google-apps.folder' and "
+        "not trashed".format(
+            parent_id=parent_id,
+            file_type=("" if file_type == "folder" else "!"),
+            name=name,
+        )
+    }
+    headers = get_headers(client)
+    r = requests.get(
+        client.drive_url, headers=headers, params=params, proxies=client.proxies
+    )
+    files = r.json().get("files", [])
+    return files
 
 
 def get_upload_url(client, parent_id, name):
@@ -64,7 +54,7 @@ def get_upload_url(client, parent_id, name):
         data = json.dumps({"name": name, "parents": [parent_id]})
 
         r = requests.post(
-            API_HOST, headers=headers, data=data, params=params, proxies=_proxies
+            API_HOST, headers=headers, data=data, params=params, proxies=client.proxies
         )
         code = r.status_code
 
@@ -82,7 +72,9 @@ def get_upload_url(client, parent_id, name):
         return str(e), "", 0
 
 
-def upload_piece(upload_url, local_path, file_range, file_size, step_size, bar):
+def upload_piece(
+    upload_url, local_path, file_range, file_size, step_size, bar, proxies
+):
     start, end = file_range
     content_length = end - start + 1
     headers = {
@@ -95,11 +87,11 @@ def upload_piece(upload_url, local_path, file_range, file_size, step_size, bar):
         file_piece = f.read(content_length)
 
         data = get_data(file_piece, bar, step_size=step_size)
-        req = requests.put(upload_url, headers=headers, data=data, proxies=_proxies)
+        req = requests.put(upload_url, headers=headers, data=data, proxies=proxies)
         return req.status_code
 
 
-def upload_file(local_path, upload_url, chunk_size, step_size):
+def upload_file(local_path, upload_url, chunk_size, step_size, proxies=None):
     try:
         file_size = os.path.getsize(local_path)
         if file_size == 0:
@@ -116,6 +108,7 @@ def upload_file(local_path, upload_url, chunk_size, step_size):
                 file_size=file_size,
                 step_size=step_size,
                 bar=bar,
+                proxies=proxies,
             )
             if code not in (201, 202, 308):
                 bar.close()

@@ -55,7 +55,7 @@ def create_folder_by_path(client, path):
 def get_upload_url(client, parent_id, name):
     try:
         API_HOST = "https://www.googleapis.com/upload/drive/v3/files"
-        exist_file = get_files_by_name(client, parent_id, name)
+        exist_file = get_files_by_name(client, parent_id, name, file_type="file")
         if exist_file:
             return "exist", "", 0
 

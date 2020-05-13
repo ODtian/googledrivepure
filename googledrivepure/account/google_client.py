@@ -9,6 +9,10 @@ class FileSystemTokenBackend:
         self.token_path = token_path
         self.token_filename = token_filename
         self.token_path = os.path.join(self.token_path, self.token_filename)
+
+        if not os.path.exists(self.token_path):
+            os.mkdir(self.token_path)
+
         if os.path.exists(self.token_path):
             with open(self.token_path, "r") as f:
                 self.config = json.load(f)

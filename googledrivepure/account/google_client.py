@@ -5,13 +5,13 @@ import time
 
 
 class FileSystemTokenBackend:
-    def __init__(self, token_path, token_filename):
-        self.token_path = token_path
+    def __init__(self, token_dir, token_filename):
+        self.token_dir = token_dir
         self.token_filename = token_filename
-        self.token_path = os.path.join(self.token_path, self.token_filename)
+        self.token_path = os.path.join(self.token_dir, self.token_filename)
 
-        if not os.path.exists(self.token_path):
-            os.mkdir(self.token_path)
+        if not os.path.exists(self.token_dir):
+            os.mkdir(self.token_dir)
 
         if os.path.exists(self.token_path):
             with open(self.token_path, "r") as f:
@@ -34,7 +34,7 @@ class GoogleAccount:
         self.token_backend = token_backend
         if not self.token_backend:
             self.token_backend = FileSystemTokenBackend(
-                token_path="./", token_filename="gd_token.json"
+                token_dir="./", token_filename="gd_token.json"
             )
         self.proxies = proxies
 

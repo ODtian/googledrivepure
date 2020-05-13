@@ -52,6 +52,6 @@ def select_app(args):
 
 def get_token_backend(args):
     token_backend = FileSystemTokenBackend(
-        token_path=args.save_dir, token_filename=get_save_name(args) + "_token.json"
+        token_dir=args.save_dir, token_filename=get_save_name(args) + "_token.json"
     )
     return token_backend

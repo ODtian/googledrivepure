@@ -110,7 +110,7 @@ def upload_file(local_path, upload_url, chunk_size, step_size, proxies=None):
                 bar=bar,
                 proxies=proxies,
             )
-            if code not in (201, 202, 308):
+            if code not in (200, 201, 308):
                 bar.close()
                 return False
         bar.close()

@@ -9,7 +9,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-chunk", default=30 * (1024 ** 2), type=int)
+    parser.add_argument("-chunk", default=30 * (1024 ** 3), type=int)
 
     parser.add_argument("-workers", default=5, type=int)
 

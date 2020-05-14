@@ -57,17 +57,16 @@ def get_upload_url(client, parent_id, name):
             API_HOST, headers=headers, data=data, params=params, proxies=client.proxies
         )
         code = r.status_code
-
+        error = r.json().get("error", {})
+        mes = "{}:{}".format(
+            error.get("code"), error.get("errors", ["UnknownError"])[0].get("reason"),
+        )
         if code == 200:
             return "good", r.headers.get("Location"), 0
-        elif code == 429:
-            sleep_time = r.headers.get("Retry-After", 0)
+        elif code == 429 or "LimitExceeded" in mes:
+            sleep_time = r.headers.get("Retry-After", 1)
             return "sleep", "", int(sleep_time)
         else:
-            error = r.json().get("error", {})
-            mes = "{}:{}".format(
-                error.get("code"), error.get("message")
-            )
             return mes, "", 0
 
     except Exception as e:

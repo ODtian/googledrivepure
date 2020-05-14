@@ -87,11 +87,12 @@ def put(client, args):
     dir_list = set([os.path.dirname(i[1]) for i in file_list])
     result, status = create_folders(client, dir_list)
 
-    if result is False:
+    if status is False:
         message_bar(message="创建文件夹时发生错误，稍后重试" + result.message)
         return
     else:
         path_map = result
+
     def do_task(task):
         sleep_q.join()
         local_path, remote_path = task

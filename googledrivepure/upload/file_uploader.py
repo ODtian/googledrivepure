@@ -20,7 +20,7 @@ def create_folder_by_name(client, parent_id, name):
         client.drive_url, headers=headers, data=data, proxies=client.proxies
     )
     result = r.json()
-    code = result.status_code
+    code = r.status_code
     if code == 200:
         return result
     else:

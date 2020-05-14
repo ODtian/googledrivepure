@@ -88,7 +88,7 @@ def put(client, args):
     result, status = create_folders(client, dir_list)
 
     if status is False:
-        message_bar(message="创建文件夹时发生错误，稍后重试" + result.message)
+        message_bar(message="创建文件夹时发生错误，稍后重试" + str(result))
         return
     else:
         path_map = result

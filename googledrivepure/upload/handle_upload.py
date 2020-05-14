@@ -69,9 +69,9 @@ def create_folders(client, dir_list):
             bar.postfix = ["gd:" + d]
             bar.update(1)
         bar.close()
-        return path_map
+        return path_map, True
     except Exception as e:
-        print(e)
+        return e, False
 
 
 def put(client, args):
@@ -85,8 +85,13 @@ def put(client, args):
     [q.put(i) for i in file_list]
 
     dir_list = set([os.path.dirname(i[1]) for i in file_list])
-    path_map = create_folders(client, dir_list)
+    result, status = create_folders(client, dir_list)
 
+    if result is False:
+        message_bar(message="创建文件夹时发生错误，稍后重试" + result.message)
+        return
+    else:
+        path_map = result
     def do_task(task):
         sleep_q.join()
         local_path, remote_path = task

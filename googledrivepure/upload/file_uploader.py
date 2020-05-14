@@ -19,8 +19,17 @@ def create_folder_by_name(client, parent_id, name):
     r = requests.post(
         client.drive_url, headers=headers, data=data, proxies=client.proxies
     )
-    files = r.json()
-    return files
+    result = r.json()
+    code = result.status_code
+    if code == 200:
+        return result
+    else:
+        error = result.get("error", {})
+        mes = "{}:{}".format(
+            error.get("code", code),
+            error.get("errors", [{"reason": "UnknownError"}])[0].get("reason"),
+        )
+        raise Exception(mes)
 
 
 def get_files_by_name(client, parent_id, name, file_type="folder"):
@@ -38,8 +47,17 @@ def get_files_by_name(client, parent_id, name, file_type="folder"):
     r = requests.get(
         client.drive_url, headers=headers, params=params, proxies=client.proxies
     )
-    files = r.json().get("files", [])
-    return files
+    result = r.json()
+    code = r.status_code
+    if code == 200:
+        return result.get("files", [])
+    else:
+        error = result.get("error", {})
+        mes = "{}:{}".format(
+            error.get("code", code),
+            error.get("errors", [{"reason": "UnknownError"}])[0].get("reason"),
+        )
+        raise Exception(mes)
 
 
 def get_upload_url(client, parent_id, name):

@@ -107,10 +107,6 @@ def put(client, args):
             )
             if result is not True:
                 q.put(task)
-        elif status == "sleep":
-            q.put(task)
-            if sleep_q.empty():
-                sleep_q.put(sleep_time)
         elif status == "exist":
             message_bar(remote_path="gd:" + remote_path, message="文件已存在")
         else:
@@ -118,6 +114,11 @@ def put(client, args):
             message_bar(
                 remote_path="gd:" + remote_path, message="发生错误 (稍后重试): " + status
             )
+
+        if sleep_time != 0:
+            if sleep_q.empty():
+                sleep_q.put(sleep_time)
+
         q.task_done()
 
     with ThreadPoolExecutor(max_workers=args.workers) as executor:

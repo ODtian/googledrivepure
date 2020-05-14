@@ -60,16 +60,15 @@ def get_upload_url(client, parent_id, name):
 
         if code == 200:
             return "good", r.headers.get("Location"), 0
-        elif code == 429:
-            sleep_time = r.headers.get("Retry-After", 1)
-            return "sleep", "", int(sleep_time)
         else:
             error = r.json().get("error", {})
             mes = "{}:{}".format(
                 error.get("code", code),
                 error.get("errors", [{"reason": "UnknownError"}])[0].get("reason"),
             )
-            sleep_time = 1 if "LimitExceeded" in mes else 0
+            sleep_time = (
+                r.headers.get("Retry-After", 1) if "LimitExceeded" in mes else 0
+            )
             return mes, "", sleep_time
 
     except Exception as e:

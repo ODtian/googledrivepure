@@ -31,7 +31,7 @@ def get_files_by_name(client, parent_id, name, file_type="folder"):
         "not trashed".format(
             parent_id=parent_id,
             file_type=("=" if file_type == "folder" else "!="),
-            name=name.replace("'", "\'")
+            name=name.replace("'", r"\'"),
         )
     }
     headers = get_headers(client)
@@ -61,11 +61,13 @@ def get_upload_url(client, parent_id, name):
         if code == 200:
             return "good", r.headers.get("Location"), 0
         elif code == 429:
-            sleep_time = r.headers.get("Retry-After")
+            sleep_time = r.headers.get("Retry-After", 0)
             return "sleep", "", int(sleep_time)
         else:
-            error = r.json().get("error")
-            mes = "{}:{}".format(error.get("code"), error.get("message"))
+            error = r.json().get("error", {})
+            mes = "{}:{}".format(
+                error.get("code"), error.get("errors", {}).get("reason")
+            )
             return mes, "", 0
 
     except Exception as e:

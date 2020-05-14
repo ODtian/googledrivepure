@@ -66,7 +66,7 @@ def get_upload_url(client, parent_id, name):
         else:
             error = r.json().get("error", {})
             mes = "{}:{}".format(
-                error.get("code"), error.get("errors", {}).get("reason")
+                error.get("code"), error.get("message")
             )
             return mes, "", 0
 

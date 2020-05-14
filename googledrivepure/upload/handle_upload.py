@@ -21,7 +21,7 @@ def get_path(local_paths, remote_base_path):
         if os.path.isfile(path):
             name = os.path.basename(path)
             remote_path = norm_path(os.path.join(remote_base_path, name))
-            file_list.append((path, remote_path))
+            file_list.append((path, "/" + remote_path))
         else:
             base_path, _ = os.path.split(path)
             bar = count_bar(message="个文件夹已完成")

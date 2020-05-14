@@ -27,11 +27,11 @@ def get_files_by_name(client, parent_id, name, file_type="folder"):
     params = {
         "q": "'{parent_id}' in parents and "
         "name = '{name}' and "
-        "mimeType {file_type}= 'application/vnd.google-apps.folder' and "
+        "mimeType {file_type} 'application/vnd.google-apps.folder' and "
         "not trashed".format(
             parent_id=parent_id,
-            file_type=("" if file_type == "folder" else "!"),
-            name=name,
+            file_type=("=" if file_type == "folder" else "!="),
+            name=name.replace("'", "\'")
         )
     }
     headers = get_headers(client)
